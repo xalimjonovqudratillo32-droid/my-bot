@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TradeX Admin</title>
+<style>
+  :root { --bg:#060912; --card:#0f1830; --line:rgba(96,165,250,.15); --text:#e7edf8; --muted:#7a8aa8; --neon:#39ff88; --red:#ff4d6d; --blue:#3b82f6; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:14px 22px; border-bottom:1px solid var(--line); background:#0a1124; position:sticky; top:0; }
+  header b { color: var(--neon); letter-spacing:.5px; }
+  .wrap { display:grid; grid-template-columns: 200px 1fr; min-height: calc(100vh - 53px); }
+  nav { border-right:1px solid var(--line); padding:14px; display:flex; flex-direction:column; gap:6px; }
+  nav button { background:none; border:0; color:var(--muted); text-align:left; padding:10px 12px; border-radius:10px; cursor:pointer; font-size:14px; }
+  nav button.active, nav button:hover { background: rgba(59,130,246,.15); color: var(--text); }
+  main { padding: 22px; overflow-x:auto; }
+  .cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(190px,1fr)); gap:12px; margin-bottom:18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .card .k { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.6px; }
+  .card .v { font-size:24px; font-weight:800; margin-top:6px; font-variant-numeric: tabular-nums; }
+  table { width:100%; border-collapse:collapse; font-size:14px; background:var(--card); border-radius:12px; overflow:hidden; }
+  th, td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+  th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; }
+  input, select, textarea { background:#0a1124; border:1px solid var(--line); color:var(--text); padding:9px 11px; border-radius:10px; font:inherit; }
+  textarea { width:100%; min-height:90px; }
+  button.act { background:var(--blue); color:#fff; border:0; padding:9px 14px; border-radius:10px; cursor:pointer; font-weight:600; }
+  button.danger { background:var(--red); }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--text); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; margin-bottom:16px; }
+  .msg { padding:10px 14px; border-radius:10px; margin:10px 0; font-size:14px; }
+  .msg.ok { background: rgba(57,255,136,.12); color: var(--neon); }
+  .msg.err { background: rgba(255,77,109,.12); color: #ffb3c1; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .login { max-width: 380px; margin: 80px auto; }
+  .hidden { display:none !important; }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; background:#0a1124; padding:12px; border-radius:10px; max-height: 360px; overflow:auto; }
+  @media (max-width: 760px) { .wrap { grid-template-columns: 1fr; } nav { flex-direction:row; overflow-x:auto; } }
+</style>
+</head>
+<body>
+<header><div><b>◆ TradeX</b> <span class="muted">Admin</span></div><button class="act ghost hidden" id="logout">Chiqish</button></header>
+
+<section class="login" id="loginView">
+  <div class="panel">
+    <h3 style="margin-top:0">Admin kirish</h3>
+    <p class="muted">Telegram botda <code>/admin</code> buyrug'ini yuboring va olingan 6 xonali kodni kiriting. Kod bir martalik va 5 daqiqa amal qiladi.</p>
+    <div class="row"><input id="tgId" placeholder="Telegram ID" inputmode="numeric" style="flex:1" /></div>
+    <div class="row"><input id="otp" placeholder="6 xonali kod" inputmode="numeric" maxlength="6" style="flex:1" /></div>
+    <button class="act" id="loginBtn" style="width:100%">Kirish</button>
+    <div id="loginMsg"></div>
+  </div>
+</section>
+
+<div class="wrap hidden" id="appView">
+  <nav>
+    <button data-tab="stats" class="active">📊 Statistika</button>
+    <button data-tab="users">👥 Foydalanuvchilar</button>
+    <button data-tab="announce">📣 E'lonlar</button>
+    <button data-tab="referrals">🔗 Referral</button>
+    <button data-tab="logs">🧾 Audit log</button>
+    <button data-tab="api">🛰 API holati</button>
+    <button data-tab="settings">⚙️ Sozlamalar</button>
+  </nav>
+  <main>
+    <div id="msg"></div>
+
+    <div data-view="stats"><div class="cards" id="statCards"></div></div>
+
+    <div data-view="users" class="hidden">
+      <div class="row"><input id="q" placeholder="Ism, username yoki ID" style="flex:1" /><button class="act" id="searchBtn">Qidirish</button></div>
+      <table><thead><tr><th>ID</th><th>Telegram</th><th>Ism</th><th>Level</th><th>XP</th><th>Holat</th></tr></thead><tbody id="userRows"></tbody></table>
+      <div class="panel hidden" id="userDetail" style="margin-top:16px"></div>
+    </div>
+
+    <div data-view="announce" class="hidden panel">
+      <h3 style="margin-top:0">Barcha foydalanuvchilarga xabar</h3>
+      <textarea id="annText" placeholder="Xabar matni (HTML qo'llab-quvvatlanadi)"></textarea>
+      <div class="row"><button class="act" id="annBtn">Yuborish</button></div>
+      <p class="muted">Xabarlar fonda yuboriladi. BOT_TOKEN sozlanmagan bo'lsa yuborilmaydi.</p>
+    </div>
+
+    <div data-view="referrals" class="hidden"><div class="cards" id="refCards"></div><table><thead><tr><th>#</th><th>Ism</th><th>Taklif</th></tr></thead><tbody id="refRows"></tbody></table></div>
+
+    <div data-view="logs" class="hidden"><table><thead><tr><th>Vaqt</th><th>Admin</th><th>Amal</th><th>Nishon</th><th>Tafsilot</th></tr></thead><tbody id="logRows"></tbody></table></div>
+
+    <div data-view="api" class="hidden panel"><pre id="apiBox"></pre></div>
+
+    <div data-view="settings" class="hidden panel">
+      <h3 style="margin-top:0">Tizim sozlamalari</h3>
+      <div class="row"><select id="setKey"><option value="trading_enabled">trading_enabled (true/false)</option><option value="announcement_banner">announcement_banner (matn)</option></select>
+        <input id="setVal" placeholder="Qiymat" style="flex:1" /><button class="act" id="setBtn">Saqlash</button></div>
+      <pre id="setBox"></pre>
+    </div>
+  </main>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+let token = sessionStorage.getItem("tradex_admin_token");  // faqat shu tab uchun; server tomonida muddat 7 kun
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function say(text, kind = "ok") {
+  $("#msg").innerHTML = `<div class="msg ${kind}">${esc(text)}</div>`;
+  setTimeout(() => { $("#msg").innerHTML = ""; }, 4000);
+}
+async function api(path, opts = {}) {
+  const res = await fetch("/api/admin" + path, {
+    ...opts,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || ("Xato " + res.status));
+  return data;
+}
+function showApp() {
+  $("#loginView").classList.add("hidden"); $("#appView").classList.remove("hidden"); $("#logout").classList.remove("hidden");
+  loadStats();
+}
+function showTab(name) {
+  $$("nav button").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  $$("[data-view]").forEach(v => v.classList.toggle("hidden", v.dataset.view !== name));
+  ({ stats: loadStats, users: loadUsers, referrals: loadRefs, logs: loadLogs, api: loadApi, settings: loadSettings })[name]?.();
+}
+async function loadStats() {
+  const s = await api("/stats");
+  const cards = [["Jami foydalanuvchi", s.total_users], ["Faol (24h)", s.active_users_24h], ["Bugungi ro'yxat", s.new_registrations_today],
+    ["Bloklangan", s.banned_users], ["Savdo hajmi (jami)", "$" + Number(s.trading_volume_total).toLocaleString()],
+    ["Savdo hajmi (bugun)", "$" + Number(s.trading_volume_today).toLocaleString()], ["Savdolar soni", s.trades_total],
+    ["Ochiq buyurtmalar", s.open_orders], ["Referrallar", s.referrals_total]];
+  $("#statCards").innerHTML = cards.map(([k, v]) => `<div class="card"><div class="k">${k}</div><div class="v">${esc(v)}</div></div>`).join("");
+}
+async function loadUsers() {
+  const rows = await api("/users?q=" + encodeURIComponent($("#q").value.trim()));
+  $("#userRows").innerHTML = rows.map(u => `<tr style="cursor:pointer" data-uid="${u.id}">
+    <td>${u.id}</td><td>${u.telegram_id}${u.username ? " @" + esc(u.username) : ""}</td><td>${esc(u.name)}</td>
+    <td>${u.level}</td><td>${u.xp}</td><td>${u.is_banned ? "🚫 bloklangan" : (u.is_admin ? "👑 admin" : "✅")}</td></tr>`).join("")
+    || `<tr><td colspan="6" class="muted">Topilmadi</td></tr>`;
+}
+async function openUser(id) {
+  const d = await api("/users/" + id);
+  const p = d.portfolio;
+  $("#userDetail").classList.remove("hidden");
+  $("#userDetail").innerHTML = `
+    <h3 style="margin-top:0">${esc(d.user.name)} <span class="muted">#${d.user.id} · TG ${d.telegram_id}</span></h3>
+    <div class="muted">Naqd: $${Number(p.cash).toFixed(2)} · Equity: $${Number(p.equity).toFixed(2)} · P/L: $${Number(p.total_pnl).toFixed(2)} · Level ${d.user.level} · XP ${d.user.xp}</div>
+    <div class="row">
+      <button class="act ${d.is_banned ? "" : "danger"}" data-ban="${!d.is_banned}">${d.is_banned ? "Blokdan chiqarish" : "Bloklash"}</button>
+    </div>
+    <div class="row"><input id="balAmt" type="number" step="any" placeholder="Balans (+/-)" />
+      <input id="balReason" placeholder="Sabab" /><button class="act" data-bal>Balansni o'zgartirish</button></div>
+    <div class="row"><input id="xpAmt" type="number" placeholder="XP (+/-)" />
+      <input id="xpReason" placeholder="Sabab" /><button class="act" data-xp>XP o'zgartirish</button></div>
+    <div class="row"><b>Premium:</b> ${d.user.is_premium ? `⭐ faol, ${esc(new Date(d.user.premium_until).toLocaleDateString())} gacha` : "yo'q"}</div>
+    <div class="row"><input id="premDays" type="number" min="1" max="3650" value="30" style="width:110px" />
+      <button class="act" data-prem="grant">Premium berish (kun)</button>
+      <button class="act danger" data-prem="revoke">Premiumni bekor qilish</button></div>
+    <pre>${esc(JSON.stringify(d.recent_transactions.slice(0, 5), null, 2))}</pre>`;
+  $("#userDetail").dataset.uid = id;
+}
+async function loadRefs() {
+  const r = await api("/referrals");
+  $("#refCards").innerHTML = `<div class="card"><div class="k">Jami referral</div><div class="v">${r.total}</div></div>`;
+  $("#refRows").innerHTML = r.top.map(t => `<tr><td>${t.rank}</td><td>${esc(t.name)}</td><td>${t.invited}</td></tr>`).join("") || `<tr><td colspan="3" class="muted">Ma'lumot yo'q</td></tr>`;
+}
+async function loadLogs() {
+  const rows = await api("/logs");
+  $("#logRows").innerHTML = rows.map(l => `<tr><td>${new Date(l.created_at).toLocaleString()}</td><td>${l.admin_user_id}</td><td>${esc(l.action)}</td><td>${esc(l.target)}</td><td>${esc(l.details)}</td></tr>`).join("")
+    || `<tr><td colspan="5" class="muted">Log bo'sh</td></tr>`;
+}
+async function loadApi() { $("#apiBox").textContent = JSON.stringify(await api("/api-status"), null, 2); }
+async function loadSettings() { $("#setBox").textContent = JSON.stringify(await api("/settings"), null, 2); }
+
+$("#loginBtn").onclick = async () => {
+  try {
+    const res = await fetch("/api/admin/otp-login", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ telegram_id: Number($("#tgId").value), code: $("#otp").value.trim() }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail);
+    token = data.token; sessionStorage.setItem("tradex_admin_token", token);
+    showApp();
+  } catch (e) { $("#loginMsg").innerHTML = `<div class="msg err">${esc(e.message)}</div>`; }
+};
+$("#logout").onclick = () => { sessionStorage.removeItem("tradex_admin_token"); location.reload(); };
+$$("nav button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$("#searchBtn").onclick = () => loadUsers().catch(e => say(e.message, "err"));
+$("#userRows").onclick = (e) => { const tr = e.target.closest("[data-uid]"); if (tr) openUser(tr.dataset.uid).catch(err => say(err.message, "err")); };
+$("#userDetail").onclick = async (e) => {
+  const uid = $("#userDetail").dataset.uid;
+  try {
+    if (e.target.dataset.ban !== undefined) { await api(`/users/${uid}/ban`, { method: "POST", body: { banned: e.target.dataset.ban === "true" } }); say("Holat yangilandi"); }
+    if (e.target.hasAttribute("data-bal")) { await api(`/users/${uid}/balance`, { method: "POST", body: { amount: Number($("#balAmt").value), reason: $("#balReason").value } }); say("Balans yangilandi"); }
+    if (e.target.hasAttribute("data-xp")) { await api(`/users/${uid}/xp`, { method: "POST", body: { amount: parseInt($("#xpAmt").value, 10), reason: $("#xpReason").value } }); say("XP yangilandi"); }
+    if (e.target.dataset.prem === "grant") { await api(`/users/${uid}/premium/grant`, { method: "POST", body: { days: parseInt($("#premDays").value, 10) } }); say("Premium berildi"); openUser(uid); }
+    if (e.target.dataset.prem === "revoke") { await api(`/users/${uid}/premium/revoke`, { method: "POST" }); say("Premium bekor qilindi"); openUser(uid); }
+    if (e.target.dataset.ban !== undefined || e.target.hasAttribute("data-bal") || e.target.hasAttribute("data-xp")) openUser(uid);
+  } catch (err) { say(err.message, "err"); }
+};
+$("#annBtn").onclick = async () => {
+  try { const r = await api("/announcements", { method: "POST", body: { text: $("#annText").value } }); say(`Navbatga qo'yildi: ${r.queued} ta foydalanuvchi`); $("#annText").value = ""; }
+  catch (e) { say(e.message, "err"); }
+};
+$("#setBtn").onclick = async () => {
+  try { await api("/settings", { method: "PUT", body: { key: $("#setKey").value, value: $("#setVal").value } }); say("Saqlandi"); loadSettings(); }
+  catch (e) { say(e.message, "err"); }
+};
+
+if (token) { api("/stats").then(showApp).catch(() => { sessionStorage.removeItem("tradex_admin_token"); }); }
+</script>
+</body>
+</html>

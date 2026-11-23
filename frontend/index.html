@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TradeX — Trading Simulator</title>
+  <link rel="stylesheet" href="/static/app.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <!-- Ikonkalar (SVG sprite) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#8b5cf6" /><stop offset="1" stop-color="#22e07a" />
+      </linearGradient>
+    </defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-trade" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></symbol>
+    <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4M3 7v11a2 2 0 0 0 2 2h16V9H5a2 2 0 0 1-2-2M16 14h2"/></symbol>
+    <symbol id="i-mission" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></symbol>
+    <symbol id="i-crown" viewBox="0 0 24 24"><path d="M3 18h18M3 8l4.5 4L12 6l4.5 6L21 8l-2 10H5z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 2c1 3.5 5 6 5 11a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .5 2 1.5 3 2.5 3C11.5 8.5 11 5 12 2z"/></symbol>
+    <symbol id="i-gift" viewBox="0 0 24 24"><path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><path d="M9 9h11v11H9zM5 15V4h11"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  </svg>
+
+  <div class="app">
+    <!-- SIDEBAR (desktop) -->
+    <aside class="sidebar">
+      <div class="logo">
+        <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true">
+          <path d="M6 42 L22 24 L14 10 L28 6 L42 22 L26 22 L18 34 Z" fill="url(#lg)"/>
+          <path d="M42 6 L26 24 L34 38 L20 42 L6 26 L22 26 L30 14 Z" fill="url(#lg)" opacity=".55"/>
+        </svg>
+        <div class="logo-t"><b>TradeX</b><small>Trading Simulator</small></div>
+      </div>
+      <nav class="menu">
+        <button data-view="dashboard" class="on"><svg class="ic"><use href="#i-home"/></svg>Dashboard</button>
+        <button data-view="trade"><svg class="ic"><use href="#i-trade"/></svg>Trade</button>
+        <button data-view="portfolio"><svg class="ic"><use href="#i-wallet"/></svg>Portfolio</button>
+        <button data-view="missions"><svg class="ic"><use href="#i-mission"/></svg>Missions<i class="badge" id="missionBadge" hidden>0</i></button>
+        <button data-view="leaderboard"><svg class="ic"><use href="#i-trophy"/></svg>Leaderboard</button>
+        <button data-view="referral"><svg class="ic"><use href="#i-users"/></svg>Referral</button>
+        <button data-view="achievements"><svg class="ic"><use href="#i-star"/></svg>Achievements</button>
+        <button data-view="premium"><svg class="ic"><use href="#i-crown"/></svg>Premium</button>
+        <button disabled><svg class="ic"><use href="#i-gear"/></svg>Settings<em>tez orada</em></button>
+        <button id="helpBtn"><svg class="ic"><use href="#i-help"/></svg>Help</button>
+      </nav>
+      <div class="promo">
+        <div class="promo-t">Invite Friends</div>
+        <div class="promo-s">Get <b id="promoBonus">$—</b> Bonus!</div>
+        <svg class="gift" viewBox="0 0 24 24"><use href="#i-gift"/></svg>
+        <button class="btn-violet" data-copy>Copy Link ↗</button>
+      </div>
+    </aside>
+
+    <div class="content">
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div class="m-logo">
+          <svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 42 L22 24 L14 10 L28 6 L42 22 L26 22 L18 34 Z" fill="url(#lg)"/></svg>
+          TradeX
+        </div>
+        <div class="lvl-pill" id="lvl"></div>
+        <div class="top-r">
+          <div class="streak" id="streak"></div>
+          <button class="icon-btn" id="bell" aria-label="Bildirishnomalar">
+            <svg class="ic"><use href="#i-bell"/></svg>
+            <i class="dot" id="bellDot" hidden></i>
+          </button>
+          <div class="avatar" id="avatar"><span>T</span><i class="online"></i></div>
+        </div>
+      </header>
+
+      <main class="grid" id="main" data-view="dashboard">
+        <!-- Welcome -->
+        <section class="card welcome" data-in="dashboard">
+          <svg class="crown" viewBox="0 0 24 24"><use href="#i-crown"/></svg>
+          <div>
+            <h2><span id="welcome">Welcome back, Trader!</span><span class="pro-tag" id="proTag" hidden>⭐ PRO</span></h2>
+            <p>Better trades. Bigger profits. 🚀</p>
+          </div>
+        </section>
+
+        <!-- Virtual balance -->
+        <section class="card balance" data-in="dashboard portfolio">
+          <div class="bal-ic"><svg class="ic"><use href="#i-wallet"/></svg></div>
+          <div class="bal-body">
+            <span class="lbl">Virtual Balance</span>
+            <div class="bal-v" id="balValue">—</div>
+            <span class="chip" id="balChip"></span>
+          </div>
+          <div class="bal-spark" id="balSpark"></div>
+        </section>
+
+        <!-- Coin tickers -->
+        <section class="tickers" data-in="dashboard trade" id="tickers">
+          <div class="card" style="min-height:90px"><span class="lbl">Yuklanmoqda…</span></div>
+        </section>
+
+        <!-- Chart -->
+        <section class="card chart-card" data-in="dashboard trade">
+          <div class="chart-head">
+            <div class="coin-title"><span id="cIc"></span><div><b id="cName">—</b><small id="cSym"></small></div></div>
+            <div class="chart-px"><b id="cPx">—</b><span class="chip" id="cChg"></span>
+              <button class="fav" id="cFav" aria-label="Sevimli"><svg class="ic"><use href="#i-star"/></svg></button>
+            </div>
+          </div>
+          <div class="tf" id="tf">
+            <button data-tf="900" class="on">15m</button>
+            <button data-tf="1800">30m</button>
+            <button data-tf="3600">1h</button>
+            <button data-tf="14400">4h</button>
+          </div>
+          <div id="chart" class="chart"></div>
+          <small>Grafik CoinGecko'ning so'nggi 24 soatlik ma'lumoti asosida shakllantiriladi.</small>
+        </section>
+
+        <!-- Trade panel -->
+        <section class="card trade-card" data-in="dashboard trade">
+          <div class="seg2" id="typeSeg">
+            <button data-type="market" class="on">Market</button>
+            <button data-type="limit">Limit</button>
+          </div>
+          <div class="side" id="sideSeg">
+            <button data-side="buy" class="on buy">Buy ↗</button>
+            <button data-side="sell" class="sell">Sell ↘</button>
+          </div>
+          <div>
+            <span class="lbl">Amount (USD)</span>
+            <input id="amount" class="input big" inputmode="decimal" placeholder="0.00" autocomplete="off" />
+          </div>
+          <div class="pcts">
+            <button data-pct="25">25%</button><button data-pct="50">50%</button>
+            <button data-pct="75">75%</button><button data-pct="100">100%</button>
+          </div>
+          <div class="field" id="limitWrap" hidden>
+            <span class="lbl">Limit narx (USD)</span>
+            <input id="limitPx" class="input" inputmode="decimal" placeholder="0.00" autocomplete="off" />
+          </div>
+          <div class="recv">
+            <span class="lbl">You'll receive</span>
+            <div class="recv-v"><span id="recvIc"></span><b id="recvQty">0</b><span id="recvSym">BTC</span></div>
+          </div>
+          <button class="btn-go buy" id="submit">Buy BTC</button>
+          <small id="avail"></small>
+        </section>
+
+        <!-- Portfolio -->
+        <section class="card port-card" data-in="dashboard portfolio">
+          <div class="row between"><h3>Portfolio</h3><button class="link" data-view="portfolio">View All →</button></div>
+          <div class="port-main">
+            <div id="donut"></div>
+            <div><b class="port-v" id="portV">—</b><span class="chip" id="portChg"></span></div>
+          </div>
+          <div class="legend" id="legend"></div>
+        </section>
+
+        <!-- Last trades -->
+        <section class="card trades-card" data-in="dashboard trade portfolio">
+          <div class="row between"><h3>Last Trades</h3><button class="link" data-view="portfolio">View All →</button></div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Time</th><th>Asset</th><th>Type</th><th class="r">Amount</th><th class="r">Profit</th></tr></thead>
+              <tbody id="trades"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Missions & achievements -->
+        <section class="card missions-card" data-in="dashboard missions achievements">
+          <div class="row between">
+            <h3>Daily Missions</h3>
+            <span class="timer" id="timer">—</span>
+          </div>
+          <div id="missions"></div>
+          <div class="ach-wrap">
+            <h3 class="mt">Achievements</h3>
+            <div id="ach" class="ach-grid"></div>
+          </div>
+          <button class="btn-ghost" id="dailyBtn">🎁 Kunlik sovg'ani olish</button>
+        </section>
+
+        <!-- Orders (portfolio) -->
+        <section class="card orders-card" data-in="portfolio">
+          <div class="row between">
+            <h3>Orders</h3>
+            <div class="seg2" id="ofilter">
+              <button data-of="" class="on">Hammasi</button>
+              <button data-of="open">Ochiq</button>
+              <button data-of="filled">Bajarilgan</button>
+              <button data-of="cancelled">Bekor</button>
+            </div>
+          </div>
+          <div id="orders"></div>
+        </section>
+
+        <!-- Leaderboard -->
+        <section class="card lb-card" data-in="dashboard leaderboard">
+          <div class="row between"><h3>🏆 Leaderboard</h3><span class="small">Equity bo'yicha</span></div>
+          <div id="lb"></div>
+        </section>
+
+        <!-- Stats -->
+        <section class="card stats-card" data-in="dashboard leaderboard">
+          <h3>Your Stats</h3>
+          <div class="stat"><span class="muted">Total Profit</span><b id="stP">—</b></div>
+          <div class="stat"><span class="muted">Win Rate</span><b id="stW">—</b></div>
+          <div class="stat"><span class="muted">Total Trades</span><b id="stT">0</b></div>
+          <div class="stat"><span class="muted">Level</span><b id="stLvl">1</b></div>
+          <div class="bar"><i id="stBar" style="width:0%"></i></div>
+          <small id="stXp"></small>
+        </section>
+
+        <!-- Invite -->
+        <section class="card invite-card" data-in="dashboard referral">
+          <div class="inv-head">
+            <svg class="gift-ic" viewBox="0 0 24 24"><use href="#i-gift"/></svg>
+            <div>
+              <h3>Invite Friends</h3>
+              <p>Get <b id="invBonus">$—</b> Bonus!</p>
+            </div>
+          </div>
+          <div class="link-box"><code id="refLink">—</code></div>
+          <div class="row gap">
+            <button class="btn-violet" data-copy>Copy Link</button>
+            <button class="btn-ghost" data-share>Ulashish</button>
+          </div>
+          <div class="grid2">
+            <div><span class="muted">Taklif qilganlar</span><b id="refCount">0</b></div>
+            <div><span class="muted">Jami bonus</span><b id="refBonus">$0</b></div>
+          </div>
+        </section>
+
+        <!-- Premium -->
+        <section class="card premium-card" data-in="premium">
+          <div class="prem-head">
+            <svg class="crown" viewBox="0 0 24 24"><use href="#i-crown"/></svg>
+            <div style="flex:1;min-width:0"><h2>Premium</h2><p class="muted" id="premSub" style="margin:4px 0 0">—</p></div>
+            <span class="chip muted-chip" id="premChip">—</span>
+          </div>
+          <div class="prem-perks" id="premPerks"></div>
+          <div id="premBody"></div>
+        </section>
+
+        <!-- Referral history -->
+        <section class="card refhist-card" data-in="referral">
+          <h3>Referral tarixi</h3>
+          <div id="refHist"></div>
+          <h3 class="mt">Top taklif qiluvchilar</h3>
+          <div id="refTop"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Mobile tabbar -->
+  <nav class="tabbar">
+    <button data-view="dashboard" class="on"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+    <button data-view="trade"><svg class="ic"><use href="#i-trade"/></svg>Trade</button>
+    <button data-view="portfolio"><svg class="ic"><use href="#i-wallet"/></svg>Portfel</button>
+    <button data-view="missions"><svg class="ic"><use href="#i-mission"/></svg>Missiya</button>
+    <button data-view="leaderboard"><svg class="ic"><use href="#i-trophy"/></svg>Reyting</button>
+  </nav>
+
+  <!-- Modal (bildirishnoma va yordam) -->
+  <div class="modal-bd" id="modal" hidden>
+    <div class="modal">
+      <div class="row between" style="margin-bottom:12px">
+        <h3 id="mTitle"></h3>
+        <button class="icon-btn" data-close aria-label="Yopish"><svg class="ic"><use href="#i-close"/></svg></button>
+      </div>
+      <div id="mBody"></div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <div class="boot" id="boot">
+    <div class="spinner" id="bootSpin"></div>
+    <p id="bootMsg">TradeX yuklanmoqda…</p>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

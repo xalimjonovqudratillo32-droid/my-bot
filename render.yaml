@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: tradex-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEV_AUTH_BYPASS
+        value: "false"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tradex-db
+          property: connectionString
+      - key: BOT_TOKEN
+        sync: false
+      - key: BOT_USERNAME
+        value: TradeXSimBot
+
+databases:
+  - name: tradex-db
+    databaseName: tradex
+    user: tradex
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "17"
